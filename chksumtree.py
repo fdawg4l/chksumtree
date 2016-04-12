@@ -47,6 +47,17 @@ def parseOptions():
     (options, args) = parser.parse_args()
     return options
 
+class Filechksum():
+    def __init__(self, options, path):
+        '''
+        Filechksum.path = full path to file
+        Filechksum.md5sum = checksum for file
+        Filechksum.stat = stat for file
+        '''
+        self.path = path
+        self.md5sum = md5sum(path, options.read_buffer)
+        self.stat = os.stat(file)
+
 
 def md5sum(file, read_buffer):
     ''' Get the md5 of a file '''
@@ -57,15 +68,15 @@ def md5sum(file, read_buffer):
     f.close()
     return md5.hexdigest()
 
-
-def statfile(file):
-    return os.stat(file)
-
-
-class Filedata():
-    def __init__(self, options, file, path):
-        self.datfile = os.path.join(path, file)
-        self._path = path
+class Treechksum():
+    def __init__(self, options, datfile, path):
+        '''
+        Treechksum.datfile = filename in path to load/write checksum data to. 
+        Treechksum.chksums = dict of checksum data.
+        Treechksum.path = full path of tree to checksum
+        '''
+        self.datfile = os.path.join(path, datfile)
+        self.path = path
         self.cksums = {}
         self._read(options)
 
@@ -107,10 +118,10 @@ class Filedata():
         total_keys = len(self.cksums.keys())
         count = 0
 
-        for (root, dirs, files) in os.walk(self._path):
+        for (root, dirs, files) in os.walk(self.path):
             for file in files:
                                         # chomp the full path
-                if file in [".DS_Store", self.datfile[len(self._path):]]:
+                if file in [".DS_Store", self.datfile[len(self.path):]]:
                     continue
 
                 in_file = os.path.join(root, file)
@@ -133,8 +144,8 @@ class Filedata():
 
     def _get_rel_path(self, in_file):
 
-        if in_file.startswith(self._path):
-            rel_path = in_file[len(self._path):].lstrip("/")
+        if in_file.startswith(self.path):
+            rel_path = in_file[len(self.path):].lstrip("/")
         else:
             rel_path = in_file.lstrip("/")
         return rel_path
@@ -203,7 +214,7 @@ class Filedata():
 def main():
     options = parseOptions()
     pprint.pprint(options)
-    chksums = Filedata(options,
+    chksums = Treechksum(options,
                        options.data_file,
                        options.path)
                        
